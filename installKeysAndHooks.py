@@ -157,15 +157,17 @@ def sync(access, organization, roster, assignment):
 
 
 def main():
+    with open("secrets.txt", "r") as secretfile:
+        secrets = secretfile.read().splitlines()
     sync(
         access={
             'codegrade': {
                 'subdomain': 'wur',
-                'username': '',
-                'password': '',
+                'username': secrets[0],
+                'password': secrets[1],
             },
             'github': {
-                'token': ''
+                'token': secrets[2]
             }
         },
         organization={
