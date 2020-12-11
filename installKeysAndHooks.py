@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from github import Github
 
 import requests
+import re
 
 class CGSession(requests.Session):
     def __init__(self, prefix_url, access_token, *args, **kwargs):
@@ -30,70 +31,7 @@ def handle_response(res):
         exit(1)
     return res.json()
 
-
-def get_webhook_data_per_user(
-    subdomain=None,
-    username=None,
-    password=None,
-    course_id=None,
-    assig_id=None,
-):
-    """Get the webhook data for an assignment for each student.
-    """
-
-    if subdomain is None:
-        subdomain = input('Subdomain: ')
-    if username is None:
-        username = input('Username: ')
-    if password is None:
-        password = getpass.getpass('Password: ')
-    if course_id is None:
-        course_id = input('Course ID: ')
-    if assig_id is None:
-        assig_id = input('Assignment ID: ')
-
-    base_url = 'https://{}.codegra.de'.format(subdomain)
-
-    r = handle_response(requests.post(
-        base_url + '/api/v1/login',
-        json = { 'username': username, 'password': password },
-    ))
-
-    ses = CGSession(base_url, r['access_token'])
-    
-    users = handle_response(
-        ses.get('/api/v1/courses/{}/users/'.format(course_id)),
-    )
-    
-    webhook_data = [
-        handle_response(
-            ses.post(
-                '/api/v1/assignments/{}/webhook_settings?webhook_type=git&author={}'.format(
-                    assig_id,
-                    user['User']['username'],
-                ),
-            ),
-        ) for user in users
-    ]
-
-    return [
-        {
-            'id': user['User']['id'],
-            'username': user['User']['username'],
-            'fullname': user['User']['name'],
-            'webhook_url': 'https://{}.codegra.de/api/v1/webhooks/{}?branch={}'.format(
-                subdomain,
-                webhook['id'],
-                webhook['default_branch'],
-            ),
-            'secret': webhook['secret'],
-            'deploy_key': webhook['public_key'],
-        }
-        for user, webhook in zip(users, webhook_data)
-    ]
-
-
-def load_user_data(filename='roster.csv'):
+def load_user_data(filename='github_webhooks.csv'):
     with open(filename) as user_data:
         reader = csv.DictReader(user_data)
         try:
@@ -109,51 +47,40 @@ def sync(access, organization, roster, assignment):
     org = g.get_organization(organization['github-name'])
     print('done')
     print('Loading the roster ...', end=' ', flush=True)
-    students = load_user_data(roster)
-    sids = [ s['codegrade-user'] for s in students ]
+    group_info = load_user_data(roster)
     print('done')
-    print('Retrieving CodeGrade data ...', end=' ', flush=True)
-    whdata = get_webhook_data_per_user(
-        subdomain=access['codegrade']['subdomain'],
-        username=access['codegrade']['username'],
-        password=access['codegrade']['password'],
-        course_id=organization['codegrade-id'],
-        assig_id=assignment['codegrade-id']
-    )
-    print('done\n')
-    no_users = 0
+    no_groups = 0
     no_errors = 0
-    for user in whdata:
-        if user['username'] in sids:
-            student = next(s for s in students if s['codegrade-user'] == user['username'])
-            print('Processing', assignment['github-name'] + '-' + student['github-user'],'...')
-            try:
-                repo = org.get_repo(assignment['github-name'] + '-' + student['github-user'])
-                if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
-                    print('>','Adding deploy key for', user['fullname'])
-                    repo.create_key(title='codegrade-key', key=user['deploy_key'])
-                else:
-                    print('>','Deploy key found for', user['fullname'])
-                if user['webhook_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
-                    print('>','Adding webhook for', user['fullname'])
-                    repo.create_hook(
-                        'web',
-                        config={
-                            'url': user['webhook_url'],
-                            'content_type': 'json',
-                            'secret': user['secret']
-                        },
-                        events=['push'],
-                        active=True
-                    )
-                else:
-                    print('>','Webhook found for', user['fullname'])
-                no_users += 1
-            except:
-                e = sys.exc_info()[0]
-                print('>','Error:', e)
-                no_errors += 1
-    print('\nProcessed',no_users,'student(s);',no_errors,'error(s).')
+    for group in group_info:
+        groupname = re.sub(r'[^\w.-_]', '_', group['group_name'])
+        print('Processing', assignment['github-name'] + '-' + group['group_name'],'...')
+        try:
+            repo = org.get_repo(assignment['github-name'] + '-' + student['github-user'])
+            if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
+                print('>','Adding deploy key for', user['fullname'])
+                repo.create_key(title='codegrade-key', key=user['deploy_key'])
+            else:
+                print('>','Deploy key found for', user['fullname'])
+            if user['webhook_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
+                print('>','Adding webhook for', user['fullname'])
+                repo.create_hook(
+                    'web',
+                    config={
+                        'url': user['webhook_url'],
+                        'content_type': 'json',
+                        'secret': user['secret']
+                    },
+                    events=['push'],
+                    active=True
+                )
+            else:
+                print('>','Webhook found for', user['fullname'])
+            no_users += 1
+        except:
+            e = sys.exc_info()[0]
+            print('>','Error:', e)
+            no_errors += 1
+    print('\nProcessed',no_groups,'group(s);',no_errors,'error(s).')
 
 
 def main():
