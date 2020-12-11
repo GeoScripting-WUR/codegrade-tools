@@ -131,12 +131,16 @@ def init_roster(access, organization, in_file, out_file):
 
 
 def main():
+    # CodeGrade username, CodeGrade password, GitHub API key
+    with open("secrets.txt", "r") as secretfile:
+        secrets = secretfile.read().splitlines()
+        
     init_roster(
         access={
             'codegrade': {
                 'subdomain': 'wur',
-                'username': '',
-                'password': '',
+                'username': secrets[0],
+                'password': secrets[1],
             },
         },
         organization={
