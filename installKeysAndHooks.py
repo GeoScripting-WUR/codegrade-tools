@@ -43,7 +43,7 @@ def load_user_data(filename='github_webhooks.csv'):
     return data
 
 
-def sync(access, organization, roster, assignment):
+def sync(access, organization, roster, assignment, student_readable=False):
     print('Connecting to the organization',organization['github-name'],'...', end=' ', flush=True)
     g = Github(access['github']['token'])
     org = g.get_organization(organization['github-name'])
@@ -55,8 +55,10 @@ def sync(access, organization, roster, assignment):
     no_errors = 0
     for group in group_info:
         groupname = re.sub(r'[^\w.-_]', '_', group['group_name'])
-        reponame = assignment['github-name'] + '-' + group['group_name']
-        group_members = group["github_ids"].split().append(organization['github-name']+"/staff")
+        reponame = assignment['github-name'] + '-' + groupname
+        group_members = group["github_ids"].split()
+        staff_team = org.get_team_by_slug("staff")
+        student_team = org.get_team_by_slug("students")
         print('Processing', reponame,'...')
         try:
             if reponame not in [ repo.name for repo in org.get_repos() ]:
@@ -86,11 +88,28 @@ def sync(access, organization, roster, assignment):
             else:
                 print('>','Webhook found for', group['group_name'])
             for member in group_members:
+                print(">", "Processing collaborators:", member)
                 if repo.has_in_collaborators(member):
                     print('>', 'Collaborator', member, 'already present')
                 else:
+                    print('>', 'Adding collaborator', member)
                     repo.add_to_collaborators(member, "maintain")
                     print('>', 'Collaborator', member, 'added to the repository')
+            #if reponame not in [ staff_repo.name for staff_repo in staff_team.get_repos() ]:
+            if staff_team.has_in_repos(repo):
+                print(">", "Staff already owns", reponame)
+            else:
+                print(">", "Adding staff permission to maintain", reponame)
+                staff_team.add_to_repos(repo)
+                print(">", "Staff can now maintain", reponame)
+            if student_readable:
+                if student_team.has_in_repos(repo):
+                    print(">", "Students can already see", reponame)
+                else:
+                    print(">", "Adding students permission to read", reponame)
+                    student_team.add_to_repos(repo)
+                    student_team.set_repo_permission(repo, "read")
+                    print(">", "Students can now read", reponame)
             no_users += 1
         except:
             e = sys.exc_info()[0]
@@ -121,7 +140,8 @@ def main():
         assignment={
             'codegrade-id': 32,
             'github-name': 'Exercise_1_Starter'
-        }
+        },
+        student_readable=False
     )
 
     
