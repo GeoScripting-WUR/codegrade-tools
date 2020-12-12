@@ -5,6 +5,8 @@ import csv
 import getpass
 from urllib.parse import urljoin
 from github import Github
+# Requires a version with template cloning support:
+# https://github.com/PyGithub/PyGithub/pull/1395
 
 import requests
 import re
@@ -53,28 +55,42 @@ def sync(access, organization, roster, assignment):
     no_errors = 0
     for group in group_info:
         groupname = re.sub(r'[^\w.-_]', '_', group['group_name'])
-        print('Processing', assignment['github-name'] + '-' + group['group_name'],'...')
+        reponame = assignment['github-name'] + '-' + group['group_name']
+        group_members = group["github_ids"].split().append(organization['github-name']+"/staff")
+        print('Processing', reponame,'...')
         try:
-            repo = org.get_repo(assignment['github-name'] + '-' + student['github-user'])
+            if reponame not in [ repo.name for repo in org.get_repos() ]:
+                print(">", "Repository", reponame, "does not exist yet, cloning...")
+                template = org.get_repo(assignment['github-name'])
+                org.create_repo_from_template(reponame, template, private=True)
+                print(">", "Repository", reponame, "created successfully")
+            
+            repo = org.get_repo(reponame)
             if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
-                print('>','Adding deploy key for', user['fullname'])
-                repo.create_key(title='codegrade-key', key=user['deploy_key'])
+                print('>','Adding deploy key for', group['group_name'])
+                repo.create_key(title='codegrade-key', key=group['public_key'])
             else:
-                print('>','Deploy key found for', user['fullname'])
-            if user['webhook_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
-                print('>','Adding webhook for', user['fullname'])
+                print('>','Deploy key found for', group['group_name'])
+            if group['payload_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
+                print('>','Adding webhook for', group['group_name'])
                 repo.create_hook(
                     'web',
                     config={
-                        'url': user['webhook_url'],
+                        'url': group['payload_url'],
                         'content_type': 'json',
-                        'secret': user['secret']
+                        'secret': group['secret']
                     },
                     events=['push'],
                     active=True
                 )
             else:
-                print('>','Webhook found for', user['fullname'])
+                print('>','Webhook found for', group['group_name'])
+            for member in group_members:
+                if repo.has_in_collaborators(member):
+                    print('>', 'Collaborator', member, 'already present')
+                else:
+                    repo.add_to_collaborators(member, "maintain")
+                    print('>', 'Collaborator', member, 'added to the repository')
             no_users += 1
         except:
             e = sys.exc_info()[0]
