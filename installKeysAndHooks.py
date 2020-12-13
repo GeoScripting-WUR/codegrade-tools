@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from github import Github
 # Requires a version with template cloning support:
 # https://github.com/PyGithub/PyGithub/pull/1395
+# i.e. python -m pip install git+https://github.com/isouza-daitan/PyGithub@create-from-template
 
 import requests
 import re
@@ -93,24 +94,29 @@ def sync(access, organization, roster, assignment, student_readable=False):
                     print('>', 'Collaborator', member, 'already present')
                 else:
                     print('>', 'Adding collaborator', member)
-                    repo.add_to_collaborators(member, "maintain")
-                    print('>', 'Collaborator', member, 'added to the repository')
-            #if reponame not in [ staff_repo.name for staff_repo in staff_team.get_repos() ]:
+                    try:
+                        repo.add_to_collaborators(member, "maintain")
+                        print('>', 'Collaborator', member, 'added to the repository')
+                    except:
+                        e = sys.exc_info()[0]
+                        print('>','Error:', e)
+                        no_errors += 1
             if staff_team.has_in_repos(repo):
                 print(">", "Staff already owns", reponame)
             else:
                 print(">", "Adding staff permission to maintain", reponame)
                 staff_team.add_to_repos(repo)
+                staff_team.set_repo_permission(repo, "admin")
                 print(">", "Staff can now maintain", reponame)
             if student_readable:
+                print(">","Checking is students can read the repo")
                 if student_team.has_in_repos(repo):
                     print(">", "Students can already see", reponame)
                 else:
                     print(">", "Adding students permission to read", reponame)
                     student_team.add_to_repos(repo)
-                    student_team.set_repo_permission(repo, "read")
                     print(">", "Students can now read", reponame)
-            no_users += 1
+            no_groups += 1
         except:
             e = sys.exc_info()[0]
             print('>','Error:', e)
