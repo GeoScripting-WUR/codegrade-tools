@@ -52,14 +52,14 @@ def sync(access, organization, roster, assignment, student_readable=False):
     print('Loading the roster ...', end=' ', flush=True)
     group_info = load_user_data(roster)
     print('done')
+    staff_team = org.get_team_by_slug("staff")
+    student_team = org.get_team_by_slug("students")
     no_groups = 0
     no_errors = 0
     for group in group_info:
-        groupname = re.sub(r'[^\w.-_]', '_', group['group_name'])
+        groupname = re.sub(r'[^\w\-_]', '_', group['group_name'])
         reponame = assignment['github-name'] + '-' + groupname
         group_members = group["github_ids"].split()
-        staff_team = org.get_team_by_slug("staff")
-        student_team = org.get_team_by_slug("students")
         print('Processing', reponame,'...')
         try:
             if reponame not in [ repo.name for repo in org.get_repos() ]:
@@ -109,7 +109,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
                 staff_team.set_repo_permission(repo, "admin")
                 print(">", "Staff can now maintain", reponame)
             if student_readable:
-                print(">","Checking is students can read the repo")
+                print(">","Checking if students can read the repo")
                 if student_team.has_in_repos(repo):
                     print(">", "Students can already see", reponame)
                 else:
