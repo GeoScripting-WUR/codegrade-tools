@@ -57,7 +57,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
     no_groups = 0
     no_errors = 0
     for group in group_info:
-        groupname = re.sub(r'[^\w\-_]', '_', group['group_name'])
+        groupname = re.sub(r'[^\w\-_]', '_', group['group_name'], flags=re.ASCII)
         reponame = assignment['github-name'] + '-' + groupname
         group_members = group["github_ids"].split()
         print('Processing', reponame,'...')
