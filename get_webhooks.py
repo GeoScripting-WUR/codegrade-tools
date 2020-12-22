@@ -66,7 +66,7 @@ def get_nonempty_groups(session, assignment_id, github_ids):
                 for m in g['members']
             ],
         }
-        for g in groups if g['members'] and g['members'][0]['username'] in github_ids
+        for g in groups if g['members'] and all(u['username'] in github_ids for u in g['members'])
     ]
 
 def get_users(session, assignment_id, github_ids, course_id):
