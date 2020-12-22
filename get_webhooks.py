@@ -43,9 +43,7 @@ class CGSession(requests.Session):
         return res.json()
 
 
-def get_webhook(session, assignment_id, group):
-    user = group['members'][0]
-
+def get_webhook(session, assignment_id, user):
     return session.post(
         '/api/v1/assignments/{}/webhook_settings?webhook_type=git&author={}'.format(
             assignment_id,
@@ -62,15 +60,27 @@ def get_nonempty_groups(session, assignment_id, github_ids):
     return [
         {
             'group': g,
-            'webhook': get_webhook(session, assignment_id, g),
+            'webhook': get_webhook(session, assignment_id, g['members'][0]),
             'github_ids': [
                 github_ids[m['username']]
                 for m in g['members']
             ],
         }
-        for g in groups if g['members']
+        for g in groups if g['members'] and g['members'][0]['username'] in github_ids
     ]
 
+def get_users(session, assignment_id, github_ids, course_id):
+    assignment = session.get('/api/v1/assignments/{}'.format(assignment_id))
+    users = session.get('/api/v1/courses/{}/users/'.format(course_id))
+
+    return [
+        {
+            'group': user['User'],
+            'webhook': get_webhook(session, assignment_id, user['User']),
+            'github_ids': [ github_ids[user['User']['username']] ],
+        }
+        for user in users if user['User']['username'] in github_ids
+    ]
 
 def read_github_ids(in_file):
     github_ids = {}
@@ -88,7 +98,7 @@ def get_user(groups, username):
     return None
 
 
-def init_roster(access, organization, in_file, out_file):
+def init_roster(access, organization, in_file, out_file, individual=False):
     print('Reading roster ...', end=' ', flush=True)
 
     github_ids = read_github_ids(in_file)
@@ -102,11 +112,17 @@ def init_roster(access, organization, in_file, out_file):
         password=access['codegrade']['password'],
     )
 
-    groups = get_nonempty_groups(
-        session=session,
-        assignment_id=organization['assignment-id'],
-        github_ids=github_ids,
-    )
+    if individual:
+        groups = get_users(session=session,
+            assignment_id=organization['assignment-id'],
+            github_ids=github_ids,
+            course_id=organization['codegrade-id'])
+    else:
+        groups = get_nonempty_groups(
+            session=session,
+            assignment_id=organization['assignment-id'],
+            github_ids=github_ids,
+        )
 
     print('done')
 
@@ -145,9 +161,11 @@ def main():
         },
         organization={
             'assignment-id': '32',
+            'codegrade-id': 14,
         },
         in_file='github_ids.csv',
         out_file='github_webhooks.csv',
+        individual=False
     )
 
 
