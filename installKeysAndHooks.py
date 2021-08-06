@@ -67,27 +67,8 @@ def sync(access, organization, roster, assignment, student_readable=False):
                 template = org.get_repo(assignment['github-name'])
                 org.create_repo_from_template(reponame, template, private=True)
                 print(">", "Repository", reponame, "created successfully")
-            
             repo = org.get_repo(reponame)
-            if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
-                print('>','Adding deploy key for', group['group_name'])
-                repo.create_key(title='codegrade-key', key=group['public_key'])
-            else:
-                print('>','Deploy key found for', group['group_name'])
-            if group['payload_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
-                print('>','Adding webhook for', group['group_name'])
-                repo.create_hook(
-                    'web',
-                    config={
-                        'url': group['payload_url'],
-                        'content_type': 'json',
-                        'secret': group['secret']
-                    },
-                    events=['push'],
-                    active=True
-                )
-            else:
-                print('>','Webhook found for', group['group_name'])
+            
             for member in group_members:
                 print(">", "Processing collaborators:", member)
                 if repo.has_in_collaborators(member):
@@ -116,6 +97,26 @@ def sync(access, organization, roster, assignment, student_readable=False):
                     print(">", "Adding students permission to read", reponame)
                     student_team.add_to_repos(repo)
                     print(">", "Students can now read", reponame)
+            
+            if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
+                print('>','Adding deploy key for', group['group_name'])
+                repo.create_key(title='codegrade-key', key=group['public_key'])
+            else:
+                print('>','Deploy key found for', group['group_name'])
+            if group['payload_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
+                print('>','Adding webhook for', group['group_name'])
+                repo.create_hook(
+                    'web',
+                    config={
+                        'url': group['payload_url'],
+                        'content_type': 'json',
+                        'secret': group['secret']
+                    },
+                    events=['push'],
+                    active=True
+                )
+            else:
+                print('>','Webhook found for', group['group_name'])
             no_groups += 1
         except:
             e = sys.exc_info()[0]
@@ -144,8 +145,8 @@ def main():
         },
         roster='github_webhooks.csv',
         assignment={
-            'codegrade-id': 32,
-            'github-name': 'Exercise_1_Starter'
+            'codegrade-id': 75,
+            'github-name': 'Resit_Exam_Starter'
         },
         student_readable=False
     )

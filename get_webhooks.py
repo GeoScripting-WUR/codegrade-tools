@@ -160,12 +160,12 @@ def main():
             },
         },
         organization={
-            'assignment-id': '32',
+            'assignment-id': '75',
             'codegrade-id': 14,
         },
         in_file='github_ids.csv',
         out_file='github_webhooks.csv',
-        individual=False
+        individual=True
     )
 
 
