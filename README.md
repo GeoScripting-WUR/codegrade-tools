@@ -1,10 +1,12 @@
-# GitHub integration for CodeGrade
+# GitHub/GitLab integration for CodeGrade
 
-This repository has scripts that automatically precreate GitHub repositories for students/groups with the keys and hooks that CodeGrade requires.
+This repository has scripts that automatically precreate GitHub/GitLab repositories for students/groups with the keys and hooks that CodeGrade requires.
 
 ## Required software
 
-Python 3 and PyGitHub [with support for cloning template repositories](https://github.com/PyGithub/PyGithub/pull/1395):
+* Python 3
+* GitLab: python-gitlab
+* GitHub: PyGitHub [with support for cloning template repositories](https://github.com/PyGithub/PyGithub/pull/1395):
 
 ```bash
 python -m pip install git+https://github.com/isouza-daitan/PyGithub@create-from-template
@@ -12,17 +14,20 @@ python -m pip install git+https://github.com/isouza-daitan/PyGithub@create-from-
 
 ## Setup
 
-We need to link CodeGrade users to GitHub users, for that create a file called `github_ids.csv` that has columns `CGUsername`, `GHUsername` for CodeGrade and GitHub respectively.
+We need to link CodeGrade users to GitHub/GitLab users, for that create a file called `github_ids.csv` (GitHub) / `usernames.csv` (GitLab) that has columns `CGUsername`, `GHUsername` for CodeGrade and GitHub respectively, or `cg_name`, `cg_user`, `gl_name`, `gl_user` for CodeGrade and GitLab (the `name` columns are not used but useful for readability).
 The CodeGrade username is generally the institution email address, but you can find out by looking at your user settings (profile).
 Admins are likely to have some other username.
+For GitLab, this "roster" file you can create automatically using the script `1_get_usernames.py` (see below).
 
-Next, we need login details to both CodeGrade and GitHub so that we can do all the cloning etc.
-For that, create a `secrets.txt` file, in which put three lines: CodeGrade username, CodeGrade password (reset password on CodeGrade if you don't have one set) and GitHub developer access token (generate one via your settings in GitHub), in that order.
+For any of the scripts to run and do anything useful, we need login details to both CodeGrade and GitHub / GitLab.
+For that, create a `secrets.txt` file, in which put three lines: your CodeGrade username, your CodeGrade password (reset password on CodeGrade if you don't have one set) and GitHub/GitLab developer access token (generate one via your settings in GitHub/GitLab), in that order.
+This file should be put into the respective directory (GitLab/GitHub).
 
-Then edit and run `get_webhooks.py` to generate a `github_webhooks.csv` file that has webhook information.
+In each script you have several parameters that you need to tweak, which are available in the `main()` function. Check it before running the scripts.
+After you have your roster CSV, run `2_get_webhooks.py` to generate a `webhooks.csv` file that has webhook information from CodeGrade.
 `'subdomain'` is your CodeGrade subdomain (subdomain.codegra.de), `'codegrade-id'` is your course ID from the URL of the course/assignment, `'assignment-id'` is the assignment number from the URL of the assignment.
 `individual` determines whether the assignment is individual or group, i.e. whether to create group repositories and add all students as collaborators, or individual student repositories only.
-After running the script, verify that the resulting `github_webhooks.csv` looks correct. Remove any rows for persons/groups you don't want to precreate a repository for.
+After running the script, verify that the resulting `webhooks.csv` looks correct. Remove any rows for persons/groups you don't want to precreate a repository for.
 
 Lastly, edit `installKeysAndHooks.py`.
 Edit the `'subdomain'` and the two fields of `'codegrade-id'` to match the ones above.
