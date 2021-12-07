@@ -21,10 +21,21 @@ def sync(access, organization, roster, assignment, student_readable=False):
     groups = g.groups.list(search=organization["gitlab-group"], order_by="similarity")
     root_group = groups[0]
     print("Using root group: " + root_group.web_url)
-    student_group = g.groups.get(root_group.subgroups.list(search=organization["subgroup-students"], order_by="similarity")[0].id, lazy=True) 
-    print("Using student group: " + student_group.web_url)
-    staff_group = g.groups.get(root_group.subgroups.list(search=organization["subgroup-staff"], order_by="similarity")[0].id, lazy=True)
-    print("Using staff group: " + staff_group.web_url)
+    student_group = None
+    staff_group = None
+    for subgroup in root_group.descendant_groups.list(all=True):
+        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"]:
+            staff_group = g.groups.get(subgroup.id)
+            print("Using staff group: " + staff_group.web_url)
+        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"]:
+            student_group = g.groups.get(subgroup.id)
+            print("Using student group: " + student_group.web_url)
+    if student_group is None:
+        raise LookupError("Could not find the student group, check organization dict entries and assignment.subgroup spelling!")
+    if staff_group is None:
+        raise LookupError("Could not find the staff group, check organization dict entries and assignment.subgroup spelling!")
+    #g.groups.get(root_group.subgroups.list(search=organization["subgroup-students"] + '/' + assignment["subgroup"], order_by="similarity")[0].id, lazy=False) 
+    
     print('done')
     print('Loading the roster ...', end=' ', flush=True)
     group_info = load_user_data(roster)
@@ -32,7 +43,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
     no_groups = 0
     no_errors = 0
     for group in group_info:
-        groupname = re.sub(r'[^\w\-_]', '_', group['group_name'], flags=re.ASCII)
+        groupname = re.sub(r'[^\w\-_]', '_', group['name'], flags=re.ASCII)
         reponame = assignment['gitlab-name'] + '-' + groupname
         group_members = group["git_ids"].split()
         print('Processing', reponame,'...')
@@ -42,7 +53,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
                 template = None
                 for repo in staff_group.projects.list(include_subgroups=True, all=True):
                     if repo.path == assignment["gitlab-name"]:
-                        template = g.projects.get(repo.id, lazy=True)
+                        template = g.projects.get(repo.id, lazy=False)
                         break
                 if template is None:
                     raise LookupError("Did not find the template to clone, please check the spelling of assignment.gitlab-name!")
@@ -51,63 +62,56 @@ def sync(access, organization, roster, assignment, student_readable=False):
             repo = None
             for proj in me.projects.list(all=True):
                 if proj.path == reponame:
-                    repo = g.projects.get(proj.id, lazy=True)
+                    repo = g.projects.get(proj.id, lazy=False)
                     break
             if repo is None:
                 raise LookupError("Did not find the template repository, check whether forking actually worked")
             
             for member in group_members:
                 print(">", "Processing collaborators:", member)
-                if repo.has_in_collaborators(member):
+                if member in [ members.username for members in repo.members.list() ]:
                     print('>', 'Collaborator', member, 'already present')
                 else:
                     print('>', 'Adding collaborator', member)
                     try:
-                        repo.add_to_collaborators(member, "maintain")
+                        # Find the user by id
+                        member_id = g.users.list(username=member)[0].id
+                        repo.members.create({'user_id': member_id, 'access_level': gitlab.DEVELOPER_ACCESS})
                         print('>', 'Collaborator', member, 'added to the repository')
                     except:
                         e = sys.exc_info()[0]
                         print('>','Error:', e)
                         no_errors += 1
-            if staff_team.has_in_repos(repo):
+            if repo.path in [ projects.path for projects in staff_group.projects.list(all=True) ]:
                 print(">", "Staff already owns", reponame)
             else:
                 print(">", "Adding staff permission to maintain", reponame)
-                staff_team.add_to_repos(repo)
-                staff_team.set_repo_permission(repo, "admin")
+                repo.share(staff_group.id, gitlab.MAINTAINER_ACCESS)
                 print(">", "Staff can now maintain", reponame)
             if student_readable:
                 print(">","Checking if students can read the repo")
-                if student_team.has_in_repos(repo):
+                if repo.path in [ projects.path for projects in student_group.projects.list(all=True) ]:
                     print(">", "Students can already see", reponame)
                 else:
                     print(">", "Adding students permission to read", reponame)
-                    student_team.add_to_repos(repo)
+                    repo.share(student_group.id, gitlab.REPORTER_ACCESS)
                     print(">", "Students can now read", reponame)
             
-            if 'codegrade-key' not in [ key.title for key in repo.get_keys() ]:
-                print('>','Adding deploy key for', group['group_name'])
-                repo.create_key(title='codegrade-key', key=group['public_key'])
+            if 'codegrade-key' not in [ key.title for key in repo.keys.list() ]:
+                print('>','Adding deploy key for', group['name'])
+                repo.keys.create({'title': 'codegrade-key', 'key': group['public_key']})
             else:
-                print('>','Deploy key found for', group['group_name'])
-            if group['payload_url'] not in [ hook.config['url'] for hook in repo.get_hooks() ]:
-                print('>','Adding webhook for', group['group_name'])
-                repo.create_hook(
-                    'web',
-                    config={
-                        'url': group['payload_url'],
-                        'content_type': 'json',
-                        'secret': group['secret']
-                    },
-                    events=['push'],
-                    active=True
-                )
+                print('>','Deploy key found for', group['name'])
+            if group['payload_url'] not in [ hook.config['url'] for hook in repo.hooks.list() ]:
+                print('>','Adding webhook for', group['name'])
+                repo.hooks.create({'url': group['payload_url'], 'token': group['secret'], 'push_events': 1})
             else:
-                print('>','Webhook found for', group['group_name'])
+                print('>','Webhook found for', group['name'])
             no_groups += 1
-        except:
+        except Exception as exception:
             e = sys.exc_info()[0]
             print('>','Error:', e)
+            print("Exception message: {}".format(exception))
             no_errors += 1
     print('\nProcessed',no_groups,'group(s);',no_errors,'error(s).')
 
@@ -125,20 +129,20 @@ def main():
             },
             'gitlab': {
                 'host': "https://git.wur.nl",
-                #'user': "masil001",
                 'token': secrets[2]
             }
         },
         organization={
             'codegrade-id': 33,
             'gitlab-group': 'geoscripting-2022',
-            'subgroup-staff': 'Staff',
-            'subgroup-students': 'Students'
+            'subgroup-staff': 'staff',
+            'subgroup-students': 'students'
         },
         roster='webhooks.csv',
         assignment={
             'codegrade-id': 98,
-            'gitlab-name': 'Exercise_1_Starter'
+            'gitlab-name': 'Exercise_1_Starter',
+            'subgroup': 'exercise-1'
         },
         student_readable=False
     )
