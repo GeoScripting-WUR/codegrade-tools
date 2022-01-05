@@ -68,7 +68,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
                     break
             if repo is None:
                 raise LookupError("Did not find the template repository, check whether forking actually worked")
-            if len(repo.protectedbranches.list()) > 0:
+            while len(repo.protectedbranches.list()) > 0:
                 def_branch = repo.protectedbranches.list()[0].name
                 print(">", "Removing protection from the", def_branch, "branch of repository", repo.path_with_namespace)
                 p_branch = repo.protectedbranches.get(def_branch)
