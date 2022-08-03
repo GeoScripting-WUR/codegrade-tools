@@ -13,6 +13,14 @@ def load_user_data(filename='webhooks.csv'):
             sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
     return data
 
+def sanitise_reponame(reponame):
+    # Replace all special characters with underscores
+    result = re.sub(r'[^\w\-_]', '_', reponame, flags=re.ASCII)
+    # Replace any duplicated underscores with a single underscore
+    result = re.sub(r'__+', '_', result, flags=re.ASCII)
+    # Remove any underscores at the start or end
+    result = re.sub(r'(^_|_$)', '', result, flags=re.ASCII)
+    return result
 
 def sync(access, organization, roster, assignment, student_readable=False):
     print('Connecting to the group',organization['gitlab-group'],'...', end=' ', flush=True)
@@ -44,8 +52,8 @@ def sync(access, organization, roster, assignment, student_readable=False):
     no_groups = 0
     no_errors = 0
     for group in group_info:
-        groupname = re.sub(r'[^\w\-_]', '_', group['name'], flags=re.ASCII)
-        reponame = assignment['gitlab-name'] + '-' + groupname
+        reponame = assignment['gitlab-name'] + '-' + group['name']
+        reponame = sanitise_reponame(reponame)
         group_members = group["git_ids"].split()
         print('Processing', reponame,'...')
         try:
@@ -168,9 +176,9 @@ def main():
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 11293,
-            'gitlab-name': 'Exercise_2_Starter',
-            'subgroup': 'exercise-2'
+            'codegrade-id': 19216,
+            'gitlab-name': 'resit-exam-starter',
+            'subgroup': 'resit-exam'
         },
         student_readable=False
     )

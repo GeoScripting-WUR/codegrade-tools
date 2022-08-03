@@ -120,12 +120,12 @@ def main():
             },
         },
         organization={
-            'assignment-id': '98',
-            'codegrade-id': 33,
+            'assignment-id': '19216',
+            'codegrade-id': 1921,
         },
         in_file='usernames.csv',
         out_file='webhooks.csv',
-        individual=False
+        individual=True
     )
 
 
