@@ -76,7 +76,7 @@ def main():
         secrets_file = "secrets.txt",
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
-        codegrade_course = 1921,
+        codegrade_course = 3811,
         codegrade_nonstudent_role = "Teacher",
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"

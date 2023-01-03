@@ -27,7 +27,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
     g = gitlab.Gitlab(access["gitlab"]["host"], private_token=access["gitlab"]["token"])
     g.auth()
     me = g.users.get(g.user.id)
-    groups = g.groups.list(search=organization["gitlab-group"], order_by="similarity")
+    groups = g.groups.list(search=organization["gitlab-group"], order_by="similarity", get_all=True)
     root_group = groups[0]
     print("Using root group: " + root_group.web_url)
     student_group = None
@@ -46,6 +46,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
     #g.groups.get(root_group.subgroups.list(search=organization["subgroup-students"] + '/' + assignment["subgroup"], order_by="similarity")[0].id, lazy=False) 
     
     print('done')
+    invite_users(g, student_group)
     print('Loading the roster ...', end=' ', flush=True)
     group_info = load_user_data(roster)
     print('done')
@@ -84,14 +85,14 @@ def sync(access, organization, roster, assignment, student_readable=False):
             
             for member in group_members:
                 print(">", "Processing collaborators:", member)
-                if member in [ members.username for members in repo.members.list() ]:
+                if member in [ members.username for members in repo.members_all.list(get_all=True) ]:
                     print('>', 'Collaborator', member, 'already present')
                 else:
                     print('>', 'Adding collaborator', member)
                     try:
                         # Find the user by id
                         member_id = g.users.list(username=member)[0].id
-                        repo.members.create({'user_id': member_id, 'access_level': gitlab.DEVELOPER_ACCESS})
+                        repo.members.create({'user_id': member_id, 'access_level': gitlab.const.AccessLevel.DEVELOPER})
                         print('>', 'Collaborator', member, 'added to the repository')
                     except:
                         e = sys.exc_info()[0]
@@ -130,8 +131,6 @@ def sync(access, organization, roster, assignment, student_readable=False):
             no_errors += 1
     print('\nProcessed',no_groups,'group(s);',no_errors,'error(s).')
 
-# Not used, but can be used for inviting everyone to the student group:
-
 def read_gitlab_ids(in_file):
     gitlab_ids = {}
     with open(in_file, 'r') as f:
@@ -139,18 +138,16 @@ def read_gitlab_ids(in_file):
             gitlab_ids[row[1]] = row[3]
     return gitlab_ids
 
-def invite_users():
+def invite_users(g, student_group):
     gl_users = read_gitlab_ids("usernames.csv")
     gl_users = list(gl_users.values())
     gl_users = gl_users[1:]
 
     for member in gl_users:
-        if member != "" and member not in [ members.username for members in student_group.members.list(all=True) ]:
-            print("inviting", member)
+        if member != "" and member not in [ members.username for members in student_group.members_all.list(get_all=True) ]:
+            print("inviting", member, "to the student group")
             member_id = g.users.list(username=member)[0].id
-            student_group.members.create({'user_id': member_id, 'access_level': gitlab.REPORTER_ACCESS})
-
-# End of unused code
+            student_group.members.create({'user_id': member_id, 'access_level': gitlab.const.AccessLevel.REPORTER})
 
 def main():
     with open("secrets.txt", "r") as secretfile:
@@ -169,16 +166,16 @@ def main():
             }
         },
         organization={
-            'codegrade-id': 1921,
-            'gitlab-group': 'geoscripting-2022',
+            'codegrade-id': 3811,
+            'gitlab-group': 'geoscripting-2023-january',
             'subgroup-staff': 'staff',
             'subgroup-students': 'students'
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 19216,
-            'gitlab-name': 'resit-exam-starter',
-            'subgroup': 'resit-exam'
+            'codegrade-id': 22203,
+            'gitlab-name': 'Exercise_1_Starter',
+            'subgroup': 'exercise-1'
         },
         student_readable=False
     )
