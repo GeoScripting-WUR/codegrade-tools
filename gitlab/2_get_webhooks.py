@@ -1,9 +1,18 @@
 import codegrade
 import csv
 import json
+import requests
 
 def get_webhook(session, assignment_id, user):
-    webhook = session.assignment.get_webhook_settings(assignment_id = assignment_id, webhook_type = "git", author_id = user)
+    max_retries = 10
+    for i in range(max_retries):
+        try:
+            webhook = session.assignment.get_webhook_settings(assignment_id = assignment_id, webhook_type = "git", author_id = user)
+            break
+        except (requests.exceptions.ReadTimeout, TimeoutError):
+            print("Timed out getting webhook for user "+ user +", retrying... " + i + "/" + max_retries)
+            pass
+    
     return {'id': webhook.id, 'public_key': webhook.public_key, 'secret': webhook.secret}
 
 def get_nonempty_groups(session, assignment_id, git_ids, access):
@@ -120,12 +129,12 @@ def main():
             },
         },
         organization={
-            'assignment-id': '22203',
+            'assignment-id': '22464',
             'codegrade-id': 3811,
         },
         in_file='usernames.csv',
         out_file='webhooks.csv',
-        individual=False
+        individual=True
     )
 
 

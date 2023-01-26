@@ -36,6 +36,9 @@ def sync(access, organization, roster, assignment, student_readable=False):
         if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"]:
             staff_group = g.groups.get(subgroup.id)
             print("Using staff group: " + staff_group.web_url)
+        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"]:
+            root_student_group = g.groups.get(subgroup.id)
+            print("Using root student group: " + root_student_group.web_url)
         if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"] + '/' + assignment["subgroup"]:
             student_group = g.groups.get(subgroup.id)
             print("Using student group: " + student_group.web_url)
@@ -46,7 +49,8 @@ def sync(access, organization, roster, assignment, student_readable=False):
     #g.groups.get(root_group.subgroups.list(search=organization["subgroup-students"] + '/' + assignment["subgroup"], order_by="similarity")[0].id, lazy=False) 
     
     print('done')
-    invite_users(g, student_group)
+    print('Inviting students to the student group...')
+    #invite_users(g, root_student_group)
     print('Loading the roster ...', end=' ', flush=True)
     group_info = load_user_data(roster)
     print('done')
@@ -173,9 +177,9 @@ def main():
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 22203,
-            'gitlab-name': 'Exercise_1_Starter',
-            'subgroup': 'exercise-1'
+            'codegrade-id': 22464,
+            'gitlab-name': 'exam-starter',
+            'subgroup': 'exam'
         },
         student_readable=False
     )
