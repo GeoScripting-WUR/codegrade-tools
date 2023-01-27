@@ -9,8 +9,8 @@ def get_webhook(session, assignment_id, user):
         try:
             webhook = session.assignment.get_webhook_settings(assignment_id = assignment_id, webhook_type = "git", author_id = user)
             break
-        except (requests.exceptions.ReadTimeout, TimeoutError):
-            print("Timed out getting webhook for user "+ user +", retrying... " + i + "/" + max_retries)
+        except:
+            print("Timed out getting webhook for user "+ str(user) +", retrying... " + str(i) + "/" + str(max_retries))
             pass
     
     return {'id': webhook.id, 'public_key': webhook.public_key, 'secret': webhook.secret}
@@ -129,12 +129,12 @@ def main():
             },
         },
         organization={
-            'assignment-id': '22464',
+            'assignment-id': '26394',
             'codegrade-id': 3811,
         },
         in_file='usernames.csv',
         out_file='webhooks.csv',
-        individual=True
+        individual=False
     )
 
 

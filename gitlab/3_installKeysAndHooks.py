@@ -177,9 +177,9 @@ def main():
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 22464,
-            'gitlab-name': 'exam-starter',
-            'subgroup': 'exam'
+            'codegrade-id': 26394,
+            'gitlab-name': 'Project_Starter',
+            'subgroup': 'project'
         },
         student_readable=False
     )
