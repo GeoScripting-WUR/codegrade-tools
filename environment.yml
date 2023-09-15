@@ -1,0 +1,7 @@
+name: codegrade-tools
+channels:
+  - conda-forge
+dependencies:
+  - unidecode
+  - emoji
+  - python-gitlab

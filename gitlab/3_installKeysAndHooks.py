@@ -3,6 +3,7 @@ import gitlab
 import codegrade
 import re
 import sys
+import emoji
 
 def load_user_data(filename='webhooks.csv'):
     with open(filename) as user_data:
@@ -14,12 +15,16 @@ def load_user_data(filename='webhooks.csv'):
     return data
 
 def sanitise_reponame(reponame):
+    # replace emojis
+    result = emoji.demojize(reponame)
     # Replace all special characters with underscores
-    result = re.sub(r'[^\w\-_]', '_', reponame, flags=re.ASCII)
+    result = re.sub(r'[^\w\-_]', '_', result, flags=re.ASCII)
     # Replace any duplicated underscores with a single underscore
     result = re.sub(r'__+', '_', result, flags=re.ASCII)
     # Remove any underscores at the start or end
     result = re.sub(r'(^_|_$)', '', result, flags=re.ASCII)
+    if result == '':
+        print(f'WARNING!!! --- Groupname for {reponame} was replaced with nothing... Hack away!! ')
     return result
 
 def sync(access, organization, roster, assignment, student_readable=False):

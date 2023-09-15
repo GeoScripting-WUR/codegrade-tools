@@ -8,6 +8,16 @@ This repository has scripts that automatically precreate GitHub/GitLab repositor
 * GitLab: python-gitlab
 * GitHub: PyGitHub [with support for cloning template repositories](https://github.com/PyGithub/PyGithub/pull/1395):
 
+You can create an environment using the [`environment.yml`]() using:
+```bash
+mamba env create --file environments.yml
+```
+This will create an environment containing all python packages available from conda. You will need to install codegrade using pip:
+
+```bash
+python3 -m pip install codegrade
+```
+
 ```bash
 python -m pip install git+https://github.com/isouza-daitan/PyGithub@create-from-template
 ```
