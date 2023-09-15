@@ -4,6 +4,7 @@
 import codegrade
 import gitlab
 import csv
+from unidecode import unidecode
 
 def init_roster(gitlab_host,
                 codegrade_tenant, codegrade_host, codegrade_course, codegrade_nonstudent_role = "Teacher",
@@ -45,15 +46,16 @@ def add_gl_students(cg_students, secrets, gitlab_host):
     # Search for matching students
     # First search by username, then search by name
     for student in cg_students:
-        gl_user = gl.users.list(search=student[1])
+        gl_user = gl.users.list(search=unidecode(student[1]))
         if len(gl_user) > 0:
             student.extend([gl_user[0].name, gl_user[0].username])
         else:
-            gl_user = gl.users.list(search=student[0])
+            gl_user = gl.users.list(search=unidecode(student[0]))
             if len(gl_user) > 0:
                 student.extend([gl_user[0].name, gl_user[0].username])
             else:
                 student.extend(["", ""])
+                print(f'WARNING! {student[0]} not found. Check what is going on!')
     return cg_students
 
 def write_roster(cg_students, output_file):
@@ -76,7 +78,7 @@ def main():
         secrets_file = "secrets.txt",
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
-        codegrade_course = 3811,
+        codegrade_course = 5027,
         codegrade_nonstudent_role = "Teacher",
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"
