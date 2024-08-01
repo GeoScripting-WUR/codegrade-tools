@@ -27,21 +27,24 @@ def sync(access, organization, roster, assignment, student_readable=False):
     g = gitlab.Gitlab(access["gitlab"]["host"], private_token=access["gitlab"]["token"])
     g.auth()
     me = g.users.get(g.user.id)
-    groups = g.groups.list(search=organization["gitlab-group"], order_by="similarity", get_all=True)
-    root_group = groups[0]
+    #groups = g.groups.list(search=organization["gitlab-group"], order_by="similarity", get_all=True)
+    root_group = g.groups.get(organization["gitlab-group"]) #groups[0]
     print("Using root group: " + root_group.web_url)
     student_group = None
     staff_group = None
-    for subgroup in root_group.descendant_groups.list(all=True):
-        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"]:
-            staff_group = g.groups.get(subgroup.id)
-            print("Using staff group: " + staff_group.web_url)
-        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"]:
-            root_student_group = g.groups.get(subgroup.id)
-            print("Using root student group: " + root_student_group.web_url)
-        if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"] + '/' + assignment["subgroup"]:
-            student_group = g.groups.get(subgroup.id)
-            print("Using student group: " + student_group.web_url)
+    #for subgroup in root_group.descendant_groups.list(all=True):
+    #    if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"]:
+    #        staff_group = g.groups.get(subgroup.id)
+    staff_group = g.groups.get(organization["gitlab-group"] + '/' + organization["subgroup-staff"] + '/' + assignment["subgroup"])
+    print("Using staff group: " + staff_group.web_url)
+    #    if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"]:
+    #        root_student_group = g.groups.get(subgroup.id)
+    root_student_group = g.groups.get(organization["gitlab-group"] + '/' + organization["subgroup-students"])
+    print("Using root student group: " + root_student_group.web_url)
+    #    if subgroup.full_path == organization["gitlab-group"] + '/' + organization["subgroup-students"] + '/' + assignment["subgroup"]:
+    #        student_group = g.groups.get(subgroup.id)
+    student_group = g.groups.get(organization["gitlab-group"] + '/' + organization["subgroup-students"] + '/' + assignment["subgroup"])
+    print("Using student group: " + student_group.web_url)
     if student_group is None:
         raise LookupError("Could not find the student group, check organization dict entries and assignment.subgroup spelling!")
     if staff_group is None:

@@ -3,17 +3,16 @@ import os
 
 with open("../gitlab/secrets.txt", "r") as secretfile:
     secrets = secretfile.read().splitlines()
+
 token = secrets[2]
 gl = gitlab.Gitlab(url='https://git.wur.nl/', private_token=token)
 gl.auth()
 
+id_old = "geoscripting-2023-september"
+id_new = "geoscripting-2024"
 
 def update_namespace(old_namespace):
-    return old_namespace.replace('2023-september', '2024')
-
-
-id_old = 15337
-id_new = 18949 # unused?
+    return old_namespace.replace(id_old, id_new)
 
 # Main Group has subgroups staff and student
 for group in gl.groups.get(id_old).subgroups.list(iterator=True):
