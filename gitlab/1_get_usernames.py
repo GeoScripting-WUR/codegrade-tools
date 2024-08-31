@@ -60,11 +60,11 @@ def add_gl_students(cg_students, secrets, gitlab_host):
 
 def write_roster(cg_students, output_file):
     # Write roster to file
-    with open(output_file, mode='w', newline='') as out:
+    with open(output_file, mode='w', newline='', encoding='utf-8') as out:
         w = csv.writer(out)
         w.writerow(['cg_name','cg_user','gl_name','gl_user'])
         for student in cg_students:
-            w.writerow(student)
+                w.writerow(student)
     print("File " + output_file + " written successfully! Please check the file and adjust as needed.")
 
 # Get all students in group
@@ -78,8 +78,8 @@ def main():
         secrets_file = "secrets.txt",
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
-        codegrade_course = 5027,
-        codegrade_nonstudent_role = "Teacher",
+        codegrade_course = 7816,                     # <-------------------------------------- code
+        codegrade_nonstudent_role = "Teacher",       # <-------------------------------------- 'Teacher'
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"
     )
