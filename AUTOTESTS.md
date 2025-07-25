@@ -28,8 +28,6 @@ CodeGrade will build a new testing Ubuntu environment every time the AutoTest `S
 
 Prior to the `Setup` in CodeGrade, certain files required for configuring the VM environment must be created and stored in the exercise's GitLab repository. 
 
-:::::::::::::: {.columns}
-::: {.column width="42%"}
 
 #### R
 
@@ -64,11 +62,6 @@ Rscript $UPLOADED_FILES/test/install_requirements.R
 ```
 
 _Important:_ There were major problems installing R packages on the CodeGrade VM, with numerous dependency issues and long setup times of up to half an hour. This could eventually be solved using `r2u` which installs R packages as Ubuntu binaries. Therefore, it is highly advised to stick to the `r2u` setup.
-
-:::
-::: {.column width="6%"}
-:::
-::: {.column width="42%"}
 
 #### Python
 
@@ -107,8 +100,6 @@ dependencies:
 
 _Important:_ Similarly to R, it is important to think about the compiling time when setting up the Python environment on CodeGrade VM. Therefore, the preferred package manager is micromamba as it is considerably faster than mamba/conda, and the absolute bare minimum of dependencies is recommended.
 
-:::
-::::::::::::::
 
 2. Next, use `Script` to set up the environment on the Ubuntu VM, with setting up the two environment variables: `GITLAB_USER_NAME` and `GITLAB_USER_PAT`. These are needed for [cloning repositories via https using personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#clone-repository-using-personal-access-token) in the next step. The cloned repository contains the assignment solution and all tests within a `test` folder.
 

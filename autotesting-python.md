@@ -29,37 +29,75 @@ The general idea of AutoTests is to run test scripts that execute the student su
 
 CodeGrade will build a new testing Ubuntu environment every time the AutoTest `Setup` configuration changes. This means that CodeGrade checks if the code in each cell has changed since the last snapshot and runs the code again if necessary. Once the AutoTest configuration including the setup works, the snapshot is used when students submit assignments. 
 
-Use `Upload Files` to upload configuration files and `Script` to set up the environment on the Ubuntu VM. 
 
-1. Use `Upload Files` to upload `setup.zip` that contains a `.bash_profile`, which sets the two environment variables `GITLAB_USER_NAME` and `GITLAB_USER_PATH`. These are needed for [cloning repositories via https using personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#clone-repository-using-personal-access-token) in the next step. The cloned repository contains the assignment solution and all tests within a `test` folder.
-2. 
+1. Create `.sh` install requirements file and `.yaml` environment file containing all necessary python dependencies for the current exercise. These files will be used in the next step to set up the CodeGrade Ubuntu environment for Python. These files should be uploaded into the `test` folder of each solution repository.
+
+`install_requirements.sh`: 
+```bash
+sudo apt-get update
+sudo apt-get install curl
+
+# install micromamba
+curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+
+sudo mv bin/micromamba /usr/local/bin/
+sudo chmod +x /usr/local/bin/micromamba
+
+eval "$(micromamba shell hook --shell bash)"
+
+# initialize micromamba shell
+micromamba shell init -s bash -r ~/micromamba
+
+# create and activate environment 
+micromamba env create -f $UPLOADED_FILES/test/environment.yaml -y
+micromamba activate environment
 ```
-export GITLAB_USER_NAME=geoscripting-<year>-september
+
+`environment.yaml`:
+```yaml
+name: environmnet
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - spyder
+```
+
+_Important:_ Similarly to R, it is important to think about the compiling time when setting up the Python environment on CodeGrade VM. Therefore, the preferred package manager is micromamba as it is considerably faster than mamba/conda, and the absolute bare minimum of dependencies is recommended.
+
+
+2. Next, use `Script` to set up the environment on the Ubuntu VM, with setting up the two environment variables: `GITLAB_USER_NAME` and `GITLAB_USER_PAT`. These are needed for [cloning repositories via https using personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#clone-repository-using-personal-access-token) in the next step. The cloned repository contains the assignment solution and all tests within a `test` folder.
+
+```
+export GITLAB_USER_NAME=geoscripting-<year>
 export GITLAB_USER_PAT=<personal_access_token>
 ```
 
-1. Install git 
-2. Get the requirements for the relevant language. These are cloned from gitlab.
-3. Move the relevant files from the temporary location to the `$UPLOADED_FILES` directory.
-4. Run the install_requirements script to install the requirements. 
+_Note_: Files are being uploaded into the directory `/home/codegrade/fixtures` that is defined by the CodeGrade environment variable called `$UPLOADED_FILES`. In earlier CodeGrade versions this is the same as `$FIXTURES`. 
 
+3. The next step is to install git and clone solution repository. 
+4. Install requirements, defined by `install_requirements.sh`.
+
+CodeGrade `Script` cell: 
 
 ```bash
-# install GDAL
-sudo apt update && sudo apt install -y git
-# set up git and clone solution repo with tests
+# load setup vars
+export GITLAB_USER_NAME=geoscripting-2024
+export GITLAB_USER_PAT=example
 
+# set up git and clone solution repo with tests
+sudo apt update && sudo apt install -y git
 YEAR=`date +%Y`
-NR='08'
+NR='07'
 git clone https://$GITLAB_USER_NAME:$GITLAB_USER_PAT@git.wur.nl/geoscripting-$YEAR/staff/exercise-$NR/exercise-$NR-solution.git $UPLOADED_FILES/tmp
-mv $UPLOADED_FILES/tmp/environment.yml $UPLOADED_FILES/environment.yaml
 mv $UPLOADED_FILES/tmp/test $UPLOADED_FILES/ && rm -rf $UPLOADED_FILES/tmp
 
 # install requirements
 chmod +x $UPLOADED_FILES/test/install_requirements.sh
-$UPLOADED_FILES/test/install_requirements.sh
+bash $UPLOADED_FILES/test/install_requirements.sh
 
-echo "Done!!!" 
+# dummy echo command to force CodeGrade to rerun cell
+echo "Done." 
 ```
 
 ### AutoTest - Tests 
