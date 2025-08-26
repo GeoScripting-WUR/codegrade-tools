@@ -119,6 +119,10 @@ def sync(access, organization, roster, assignment, student_readable=False):
                     print(">", "Adding students permission to read", reponame)
                     repo.share(student_group.id, gitlab.const.AccessLevel.REPORTER)
                     print(">", "Students can now read", reponame)
+            else:
+                if repo.path in [ projects.path for projects in student_group.projects.list(all=True) ]:
+                    print("> Students can read the repo, removing their access")
+                    repo.unshare(student_group.id)
             
             if 'codegrade-key' not in [ key.title for key in repo.keys.list() ]:
                 print('>','Adding deploy key for', group['name'])
