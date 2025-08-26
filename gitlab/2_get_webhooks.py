@@ -2,6 +2,7 @@ import codegrade
 import csv
 import json
 import requests
+import time
 
 def get_webhook(session, assignment_id, user):
     max_retries = 10
@@ -38,14 +39,17 @@ def get_nonempty_groups(session, assignment_id, git_ids, access):
 def get_users(session, assignment_id, git_ids, course_id):
     users = session.course.get_all_users(course_id = course_id)
 
-    return [
-        {
-            'name': user.user.name,
-            'git_ids': [ git_ids[user.user.username] ],
-            'webhook': get_webhook(session, assignment_id, user.user.id)
-        }
-        for user in users if user.user.username in git_ids
-    ]
+    result = []
+    for user in users:
+        if user.user.username in git_ids:
+            result.append({
+                'name': user.user.name,
+                'git_ids': [ git_ids[user.user.username] ],
+                'webhook': get_webhook(session, assignment_id, user.user.id)
+            })
+        time.sleep(0.1)
+        
+    return result
 
 def read_gitlab_ids(in_file):
     gitlab_ids = {}
@@ -129,8 +133,8 @@ def main():
             },
         },
         organization={
-            'assignment-id': '26394',
-            'codegrade-id': 3811,
+            'assignment-id': '277873',
+            'codegrade-id': 13231,
         },
         in_file='usernames.csv',
         out_file='webhooks.csv',

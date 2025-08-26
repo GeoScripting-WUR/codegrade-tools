@@ -117,7 +117,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
                     print(">", "Students can already see", reponame)
                 else:
                     print(">", "Adding students permission to read", reponame)
-                    repo.share(student_group.id, gitlab.REPORTER_ACCESS)
+                    repo.share(student_group.id, gitlab.const.AccessLevel.REPORTER)
                     print(">", "Students can now read", reponame)
             
             if 'codegrade-key' not in [ key.title for key in repo.keys.list() ]:
@@ -173,16 +173,16 @@ def main():
             }
         },
         organization={
-            'codegrade-id': 3811,
-            'gitlab-group': 'geoscripting-2023-january',
+            'codegrade-id': 13231,
+            'gitlab-group': 'geoscripting-2025',
             'subgroup-staff': 'staff',
             'subgroup-students': 'students'
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 26394,
-            'gitlab-name': 'Project_Starter',
-            'subgroup': 'project'
+            'codegrade-id': 277873,
+            'gitlab-name': 'exercise-01-starter',
+            'subgroup': 'exercise-01'
         },
         student_readable=False
     )

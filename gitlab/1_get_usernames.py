@@ -5,6 +5,7 @@ import codegrade
 import gitlab
 import csv
 from unidecode import unidecode
+import time
 
 def init_roster(gitlab_host,
                 codegrade_tenant, codegrade_host, codegrade_course, codegrade_nonstudent_role = "Teacher",
@@ -30,7 +31,13 @@ def get_cg_students(secrets, codegrade_tenant, codegrade_host, codegrade_course,
 
     # Get users
     cg_users = client.course.get_all_users(course_id=codegrade_course)
-    cg_students = [[user.user.name, user.user.username] for user in cg_users if user.course_role.name != codegrade_nonstudent_role]
+    cg_students = []
+    for user in cg_users:
+        if user.course_role.name != codegrade_nonstudent_role:
+            cg_students.append([user.user.name, user.user.username])
+        print(cg_students)
+        time.sleep(0.1)
+    #cg_students = [[user.user.name, user.user.username] for user in cg_users if user.course_role.name != codegrade_nonstudent_role]
     return cg_students
 
 
@@ -50,7 +57,7 @@ def add_gl_students(cg_students, secrets, gitlab_host):
         if len(gl_user) > 0:
             student.extend([gl_user[0].name, gl_user[0].username])
         else:
-            gl_user = gl.users.list(search=unidecode(student[0]))
+            gl_user = gl.users.list(search=unidecode(student[0]), get_all=True)
             if len(gl_user) > 0:
                 student.extend([gl_user[0].name, gl_user[0].username])
             else:
@@ -78,8 +85,8 @@ def main():
         secrets_file = "secrets.txt",
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
-        codegrade_course = 7816,                     # <-------------------------------------- code
-        codegrade_nonstudent_role = "Teacher",       # <-------------------------------------- 'Teacher'
+        codegrade_course = 13231,                     # <-------------------------------------- code
+        codegrade_nonstudent_role = "Student",       # <-------------------------------------- 'Teacher'
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"
     )
