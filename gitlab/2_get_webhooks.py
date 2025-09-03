@@ -19,21 +19,19 @@ def get_webhook(session, assignment_id, user):
 def get_nonempty_groups(session, assignment_id, git_ids, access):
     assignment = session.assignment.get(assignment_id = assignment_id)
     group_set_id = assignment.group_set.id
-    # Workaround a missing client function
-    groups_request = session.http.request("get", "https://wur.codegra.de/api/v1/group_sets/" + str(group_set_id) + "/groups/")
-    groups = json.loads(groups_request.content)
-    # End workaround
+    groups = session.group_set.get_all_groups(group_set_id=group_set_id, page_size = 50)
 
+    session.group_
     return [
         {
-            'name': g["name"],
-            'webhook': get_webhook(session, assignment_id, g['members'][0]["id"]),
+            'name': g.name,
+            'webhook': get_webhook(session, assignment_id, g.members[0].id),
             'git_ids': [
-                git_ids[m['username']]
-                for m in g['members']
+                git_ids[m.username]
+                for m in g.members
             ],
         }
-        for g in groups if g['members'] and all(u['username'] in git_ids for u in g['members'])
+        for g in groups if g.members and all(u.username in git_ids for u in g.members)
     ]
 
 def get_users(session, assignment_id, git_ids, course_id):
@@ -81,6 +79,7 @@ def init_roster(access, organization, in_file, out_file, individual=False):
         tenant=access['codegrade']['tenant'],
         host=access['codegrade']['host']
     ) as session:
+        
         #pass
     
         if individual:
