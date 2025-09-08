@@ -86,7 +86,7 @@ def main():
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
         codegrade_course = 13231,                     # <-------------------------------------- code
-        codegrade_nonstudent_role = "Student",       # <-------------------------------------- 'Teacher'
+        codegrade_nonstudent_role = "Teacher",       # <-------------------------------------- 'Teacher'
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"
     )
