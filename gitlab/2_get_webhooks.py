@@ -21,7 +21,6 @@ def get_nonempty_groups(session, assignment_id, git_ids, access):
     group_set_id = assignment.group_set.id
     groups = session.group_set.get_all_groups(group_set_id=group_set_id, page_size = 50)
 
-    session.group_
     return [
         {
             'name': g.name,
@@ -132,7 +131,7 @@ def main():
             },
         },
         organization={
-            'assignment-id': '277873',
+            'assignment-id': '281210',
             'codegrade-id': 13231,
         },
         in_file='usernames.csv',

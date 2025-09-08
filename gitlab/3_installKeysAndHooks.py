@@ -52,7 +52,7 @@ def sync(access, organization, roster, assignment, student_readable=False):
     #g.groups.get(root_group.subgroups.list(search=organization["subgroup-students"] + '/' + assignment["subgroup"], order_by="similarity")[0].id, lazy=False) 
     
     print('done')
-    print('Inviting students to the student group...')
+    #print('Inviting students to the student group...')
     #invite_users(g, root_student_group)
     print('Loading the roster ...', end=' ', flush=True)
     group_info = load_user_data(roster)
@@ -129,6 +129,11 @@ def sync(access, organization, roster, assignment, student_readable=False):
                 repo.keys.create({'title': 'codegrade-key', 'key': group['public_key']})
             else:
                 print('>','Deploy key found for', group['name'])
+            hooks = repo.hooks.list(get_all=True)
+            if len(hooks) > 1:
+                for hook in hooks:
+                    print('>', "Multiple webhooks found, webhook deleted fopr group", group['name'])
+                    hook.delete()
             if group['payload_url'] not in [ hook.url for hook in repo.hooks.list() ]:
                 print('>','Adding webhook for', group['name'])
                 repo.hooks.create({'url': group['payload_url'], 'token': group['secret'], 'push_events': 1})
@@ -184,11 +189,11 @@ def main():
         },
         roster='webhooks.csv',
         assignment={
-            'codegrade-id': 277873,
-            'gitlab-name': 'exercise-01-starter',
-            'subgroup': 'exercise-01'
+            'codegrade-id': 281210,
+            'gitlab-name': 'exercise-02-starter',
+            'subgroup': 'exercise-02'
         },
-        student_readable=False
+        student_readable=True
     )
 
     
