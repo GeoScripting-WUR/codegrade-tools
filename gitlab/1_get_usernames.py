@@ -35,7 +35,7 @@ def get_cg_students(secrets, codegrade_tenant, codegrade_host, codegrade_course,
     for user in cg_users:
         if user.course_role.name != codegrade_nonstudent_role:
             cg_students.append([user.user.name, user.user.username])
-        print(cg_students)
+        #print(cg_students)
         time.sleep(0.1)
     #cg_students = [[user.user.name, user.user.username] for user in cg_users if user.course_role.name != codegrade_nonstudent_role]
     return cg_students
@@ -85,7 +85,7 @@ def main():
         secrets_file = "secrets.txt",
         codegrade_tenant = "Wageningen University",
         codegrade_host = "https://wur.codegra.de",
-        codegrade_course = 13231,                     # <-------------------------------------- code
+        codegrade_course = 22479,                     # <-------------------------------------- code
         codegrade_nonstudent_role = "Teacher",       # <-------------------------------------- 'Teacher'
         gitlab_host = 'https://git.wur.nl',
         output_file = "usernames.csv"
